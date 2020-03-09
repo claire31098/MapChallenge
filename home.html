@@ -61,7 +61,7 @@
 
         imgRef.getDownloadURL().then(function(url){
             var template = '<img src="{url}" width="300" height="300" />';
-            e.target.bindPopup('<img src="' + url + '" width="200" height="200" />').openPopup();
+            e.target.bindPopup('<img src="' + url + '" width="120vh" height="90vh" />').openPopup();
         }).catch(function(error) {
             console.error(error);
         });
