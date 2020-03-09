@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Map</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="leaflet/leaflet.css"/>
+    <script src="leaflet/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.js" ></script>
+
+</head>
+<body>
+<div id="form">
+    <input type="file" value="upload" id="fileButton"/>
+    <input id="lat" name="text" placeholder="Latitude">
+    <input id="long" name="text" placeholder="Longitude">
+    <button id="upload" onclick="uploadFunction()">Upload</button>
+</div>
+<div id="map" style="width:100%; height:550px;"></div>
+
+
+
+<!--<script src="https://www.gstatic.com/firebasejs/5.3.0/firebase-app.js"></script>-->
+<!--<script src="https://www.gstatic.com/firebasejs/5.3.0/firebase-auth.js"></script>-->
+<!--<script src="https://www.gstatic.com/firebasejs/5.3.0/firebase-database.js"></script>-->
+<script src = "https://gstatic.com/firebasejs/live/3.0/firebase.js"></script>
+
+
+<script>
+
+    var icon = L.icon({
+        iconUrl: "leaflet/images/marker-icon.png",
+        iconSize: [38,95],
+        iconAnchor: [22,94]
+    });
+
+    $(document).ready(function() {
+
+        var dataRef = firebase.database().ref().child("Data");
+        dataRef.on("child_added", function(snapshot){
+
+            var imgLat = snapshot.child("Latitude").val();
+            var imgLong = snapshot.child("Longitude").val();
+            var imgName = snapshot.child("Image").val();
+
+            var thisMarker = L.marker([imgLat, imgLong]);
+            thisMarker.filename = imgName;
+            thisMarker.addTo(mymap);
+            thisMarker.on('click', markerClick);
+        });
+    });
+
+    function markerClick(e){
+        var imgName = e.target.filename;
+        var modal = document.getElementById("myModal");
+        var modalImg = document.getElementById("img01");
+
+        var storageRef = firebase.storage().ref();
+        var imgRef = storageRef.child('Photos').child(imgName);
+
+
+        imgRef.getDownloadURL().then(function(url){
+            var template = '<img src="{url}" width="300" height="300" />';
+            e.target.bindPopup('<img src="' + url + '" width="200" height="200" />').openPopup();
+        }).catch(function(error) {
+            console.error(error);
+        });
+
+
+    }
+
+    var config = {
+        apiKey: "AIzaSyDA8Wn4xycp3DEIt2RvupP6ToVO13b-7Q4",
+        authDomain: "mapchallenge-c3437.firebaseapp.com",
+        databaseURL: "https://mapchallenge-c3437.firebaseio.com",
+        projectId: "mapchallenge-c3437",
+        storageBucket: "mapchallenge-c3437.appspot.com",
+        messagingSenderId: "887527863723",
+        appId: "1:887527863723:web:163123db928967a87e4eee",
+        measurementId: "G-88JR2G7R37"
+    };
+    firebase.initializeApp(config);
+
+    var fileButton = document.getElementById('fileButton');
+    var upload = document.getElementById('upload');
+    var latitude = document.getElementById('lat');
+    var longitude = document.getElementById('long');
+
+    var databaseRef = firebase.database().ref();
+    var storageRef;
+    var filename;
+
+    fileButton.addEventListener('change', function(e) {
+
+        file = e.target.files[0];
+
+        storageRef = firebase.storage().ref('Photos/' + file.name);
+        filename = file.name;
+        var task = storageRef.put(file);
+    });
+    
+    function uploadFunction() {
+
+        if(filename == null){
+            alert("Please upload a file first");
+        }else if(latitude.value.length == 0){
+            alert("Please enter a latitude or click on map to automatically enter coordinates");
+        }else if(longitude.value.length == 0){
+            alert("Please enter a longitude or click on map to automatically enter coordinates");
+        }else {
+            var ref = databaseRef.child("Data").push();
+            var key = ref.key;
+            ref.child("Latitude").set(latitude.value);
+            ref.child("Longitude").set(longitude.value);
+            ref.child("Image").set(filename);
+            window.location.reload(true);
+        }
+    }
+
+    var mymap = L.map('map').setView([ 55.865358, -4.258575],7);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}').addTo(mymap);
+
+    var popup = L.popup();
+
+    function onMapClick(e) {
+        latitude.value = e.latlng.lat;
+        longitude.value = e.latlng.lng;
+
+        L.marker([latitude, longitude], {icon: icon}).addTo(map);
+    }
+    mymap.on('click', onMapClick);
+
+</script>
+
+</body>
+</html>
